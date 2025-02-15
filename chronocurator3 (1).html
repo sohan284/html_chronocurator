@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chrono Curator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Include the html2canvas library -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <style>
+      body {
+        background-image: url("graphitebackground.png");
+        background-repeat: repeat;
+        position: relative;
+        min-height: 100vh;
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-size: cover;
+        background-position: center;
+      }
+
+      /* =========== FIXED FOOTER BAR =========== */
+      /* Reduced padding from 20px -> ~13px and font-size from x-large -> large (approx 33% smaller) */
+      #zoombtns {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: 0;
+        background: rgba(51, 51, 51, 0.8);
+        font-family: "Poppins", sans-serif;
+        padding: 10px; /* was 20px */
+        font-weight: bold;
+        font-size: medium; /* was x-large */
+        user-select: none;
+        color: #ffffff;
+        text-align: center;
+        z-index: 9999;
+      }
+
+      /* Utility Buttons: Zoom, Reset, etc. */
+      /* Reduced padding from 25px -> ~17px; font-size from x-large -> large */
+      #zoomInBtn,
+      #zoomOutBtn,
+      #exportBtn,
+      #resetBtn,
+      #bgBtn {
+        background-color: #333;
+        color: #ffffff;
+        border: 1px solid #ff5700;
+        border-radius: 10px;
+        padding: 17px; /* was 25px */
+        font-weight: bold;
+        font-size: large; /* was x-large */
+        cursor: pointer;
+        user-select: none;
+        margin: 0 5px;
+        font-family: "Poppins", sans-serif;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+      }
+
+      #zoomInBtn:hover,
+      #zoomOutBtn:hover,
+      #exportBtn:hover,
+      #resetBtn:hover,
+      #bgBtn:hover {
+        background-color: #444;
+        transform: scale(1.05);
+      }
+
+      #zoomInBtn:active,
+      #zoomOutBtn:active,
+      #exportBtn:active,
+      #resetBtn:active,
+      #bgBtn:active {
+        transform: scale(0.95);
+      }
+
+      /* Logo container + "Instructions" & "About" buttons */
+      /* Reduced the container’s width/height by ~33% */
+      #logoContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 268px; /* was 400px (about 67% of original) */
+        height: 147px; /* was 220px (about 67% of original) */
+        background-image: url("chronomainlogo.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: top;
+        background-color: rgba(51, 51, 51, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      /* Reduced #instructionBtn, #aboutBtn by ~33%: 
+       padding from 15px -> ~10px, font-size from medium -> small, 
+       margin-bottom from 20px -> ~13px */
+      #instructionBtn,
+      #aboutBtn {
+        background-color: #333;
+        color: #ffffff;
+        border: 1px solid #ff5700;
+        border-radius: 10px;
+        padding: 10px; /* was 15px */
+        font-weight: bold;
+        font-size: small; /* was medium */
+        cursor: pointer;
+        user-select: none;
+        margin: 0 5px;
+        margin-bottom: 13px; /* was 20px */
+        font-family: "Poppins", sans-serif;
+      }
+
+      #aboutBtn:hover {
+        background-color: #ff5700;
+      }
+
+      #instructionBtn:hover {
+        background-color: #ff5700;
+      }
+
+      #aboutBtn:active {
+        opacity: 1;
+        transform: scale(0.95);
+      }
+      #instructionBtn:active {
+        opacity: 1;
+        transform: scale(0.95);
+      }
+
+      .draggable {
+        position: absolute;
+        cursor: grab;
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-position: center;
+        touch-action: none;
+      }
+
+      #watchContainer {
+        position: relative;
+        min-height: 800px;
+      }
+
+      /* Lock Button styling */
+      .lockButton {
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 16px;
+        opacity: 0.8;
+        user-select: none;
+      }
+      .lockButton:hover {
+        opacity: 1;
+      }
+      .lockButton:active {
+        opacity: 1;
+        transform: scale(0.95);
+      }
+
+      /* ===== Instructional Overlay ===== */
+      #instructionOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #instructionOverlay .overlay-content {
+        background-color: #fff;
+        color: #333;
+        max-width: 400px;
+        max-height: 380px;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 0 auto;
+        margin-bottom: 150px;
+        font-size: 14px;
+      }
+      #instructionOverlay .overlay-content img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto 20px;
+      }
+
+      #closeOverlayBtn {
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #ff5700;
+        border-radius: 6px;
+        padding: 10px;
+        font-family: "Poppins", sans-serif;
+        font-weight: bold;
+        font-size: 164x;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      #closeOverlayBtn:hover {
+        background-color: #444;
+      }
+
+      #flashOverlay {
+        pointer-events: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        opacity: 0;
+        z-index: 99999;
+        transition: opacity 1s ease-in-out;
+      }
+
+      /* WATERMARK */
+      #watermarkImage {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 175px;
+        opacity: 1;
+        pointer-events: none;
+        z-index: 9998;
+        display: none;
+      }
+
+      /* ===== About Overlay ===== */
+      #aboutOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+      #aboutOverlay .overlay-content {
+        background-color: #fff;
+        color: #333;
+        width: 90%;
+        max-width: 500px;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 0 auto;
+      }
+      #closeAboutBtn {
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #ff5700;
+        border-radius: 6px;
+        padding: 10px;
+        font-family: "Poppins", sans-serif;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      #closeAboutBtn:hover {
+        background-color: #444;
+      }
+
+      /* 
+      ============ PLUS BUTTON (+) ============
+      Reduced dimensions by ~33% 
+      (75px -> 50px, font-size 50px -> 33px, line-height 75px -> 50px, 
+       also changed bottom from 115px -> ~77px)
+    */
+      #addWatchBtn {
+        position: fixed;
+        bottom: 77px; /* was 115px */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px; /* was 75px */
+        height: 50px; /* was 75px */
+        border-radius: 50%;
+        background-color: #ff5700;
+        color: #fff;
+        font-size: 33px; /* was 50px */
+        line-height: 50px; /* was 75px */
+        text-align: center;
+        cursor: pointer;
+        z-index: 9999;
+        border: 2px solid #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        user-select: none;
+      }
+      #addWatchBtn:hover {
+        background-color: #ff6f1d;
+      }
+
+      /* ============ ADD-ITEM OVERLAY ============ */
+      #addItemOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+      #addItemOverlay .overlay-content {
+        background-color: #fff;
+        color: #333;
+        width: 90%;
+        max-width: 400px;
+        padding: 20px;
+        border-radius: 8px;
+        position: relative;
+        font-size: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .closeBtn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        color: #333;
+      }
+      .closeBtn:hover {
+        color: #ff5700;
+      }
+      .hidden {
+        display: none;
+      }
+      .addItemBtn {
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #ff5700;
+        border-radius: 6px;
+        padding: 10px;
+        font-family: "Poppins", sans-serif;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      .addItemBtn:hover {
+        background-color: #444;
+      }
+
+      /* ============ BACKGROUND OVERLAY ============ */
+      #backgroundOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+      #backgroundOverlay .overlay-content {
+        background-color: #fff;
+        color: #333;
+        width: 90%;
+        max-width: 400px;
+        padding: 20px;
+        border-radius: 8px;
+        position: relative;
+      }
+      #backgroundOverlay h2 {
+        margin-top: 0;
+      }
+      #backgroundOverlay button {
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #ff5700;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-family: "Poppins", sans-serif;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 15px;
+      }
+      #backgroundOverlay button:hover {
+        background-color: #444;
+      }
+      #backgroundOverlay .closeBtn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        color: #333;
+      }
+      #backgroundOverlay .closeBtn:hover {
+        color: #ff5700;
+      }
+      .bgOptions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      /* ===============================================
+       Dropdown & Radio Styling
+       =============================================== */
+      #addItemOverlay select,
+      #backgroundOverlay select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ff5700;
+        border-radius: 8px;
+        background-color: #222;
+        color: #fff;
+        font-family: "Poppins", sans-serif;
+        font-size: 16px;
+        margin-bottom: 10px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg width='14' height='10' viewBox='0 0 14 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23ffffff' d='M1 1l6 6 6-6'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 14px 10px;
+      }
+      #addItemOverlay select:focus,
+      #backgroundOverlay select:focus {
+        outline: none;
+        border-color: #ff5700;
+        box-shadow: 0 0 5px rgba(255, 87, 0, 0.5);
+      }
+
+      #addItemOverlay .overlay-content label,
+      #backgroundOverlay .overlay-content label {
+        font-family: "Poppins", sans-serif;
+        font-weight: bold;
+        color: #333;
+      }
+
+      #addItemOverlay input[type="radio"],
+      #backgroundOverlay input[type="radio"] {
+        accent-color: #ff5700;
+        transform: scale(1.2);
+        margin-right: 5px;
+      }
+
+      /* Color Picker styling */
+      #bgColorPicker {
+        margin-top: 8px;
+        width: 60px;
+        height: 35px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: none;
+      }
+      @media (min-height: 400px) and (max-height: 700px) {
+        body {
+          transform: scale(0.67);
+          transform-origin: top left;
+          width: 150%; /* Adjust to counteract scaling */
+          height: 150%;
+          background-image: url("graphitebackground.png");
+          background-repeat: repeat;
+          position: relative;
+          min-height: 150vh;
+          margin: 0;
+          font-family: "Poppins", sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-size: cover;
+          background-position: center;
+        }
+        #instructionOverlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 150vw;
+          height: 150vh;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: none;
+          z-index: 9999;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        #addItemOverlay {
+          position: fixed;
+          left: 0;
+          width: 150vw;
+          height: 150vh;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: none;
+          z-index: 99999;
+          justify-content: center;
+          align-items: center;
+        }
+        #aboutOverlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 150vw;
+          height: 150vh;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: none;
+          z-index: 9999;
+          justify-content: center;
+          align-items: center;
+        }
+        #backgroundOverlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 150vw;
+          height: 150vh;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: none;
+          z-index: 9999;
+          justify-content: center;
+          align-items: center;
+        }
+        #zoombtns {
+          position: fixed;
+          left: 0;
+          right: 0;
+          margin: 0;
+          background: rgba(51, 51, 51, 0.8);
+          font-family: "Poppins", sans-serif;
+          padding: 10px; /* was 20px */
+          font-weight: bold;
+          font-size: medium; /* was x-large */
+          user-select: none;
+          color: #ffffff;
+          text-align: center;
+          z-index: 9999;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="flashOverlay"></div>
+
+    <!-- Logo Container w/ "Instructions" and "About" buttons -->
+    <div id="logoContainer">
+      <br /><br /><br /><br /><br />
+      <button id="instructionBtn">Instructions</button>
+      <button id="aboutBtn">About</button>
+      <br /><br />
+    </div>
+
+    <img id="watermarkImage" src="chronologosmall.png" alt="Watermark" />
+
+    <!-- ===== Instruction Overlay ===== -->
+    <div id="instructionOverlay">
+      <div class="overlay-content">
+        <img src="watchcollection.png" alt="Welcome" />
+        <h2>Welcome to <b>Chrono Curator!</b></h2>
+        <strong>Arrange your watches and visualize your collection</strong
+        ><br />
+        <p>
+          <strong><i> Instructions </i></strong><br />
+          <strong>Click the plus</strong> to add a watch or watchcase.<br />
+          <strong>Double Tap</strong> to delete an unlocked watch or case.<br />
+          <strong>Lock</strong> a case so it cannot be moved or deleted.<br />
+          <strong>Size up or down</strong> with the buttons at the bottom<br />
+          <strong>Download</strong> an image of your collection.<br />
+        </p>
+        <button id="closeOverlayBtn">Got it!</button>
+      </div>
+    </div>
+
+    <!-- ===== About Overlay ===== -->
+    <div id="aboutOverlay">
+      <div class="overlay-content">
+        <h2>About Chrono Curator</h2>
+        <p><strong>PUT ABOUT CHRONO CONTENT HERE</strong><br /><br /></p>
+        <!-- Unique close button for the About overlay -->
+        <button id="closeAboutBtn">Close</button>
+      </div>
+    </div>
+
+    <!-- ADD-ITEM OVERLAY (for watch/case) -->
+    <div id="addItemOverlay">
+      <div class="overlay-content">
+        <div class="closeBtn" onclick="closeAddItemOverlay()">×</div>
+        <h2>Add an Item</h2>
+
+        <!-- Step 1: Choose Watch vs Watchcase -->
+        <label>What would you like to add?</label>
+        <div>
+          <input
+            type="radio"
+            id="addTypeWatch"
+            name="itemType"
+            value="watch"
+            checked
+            onchange="updateSelectionUI()"
+          />
+          <label for="addTypeWatch">Watch</label>
+          <input
+            type="radio"
+            id="addTypeCase"
+            name="itemType"
+            value="case"
+            onchange="updateSelectionUI()"
+          />
+          <label for="addTypeCase">Watchcase</label>
+        </div>
+
+        <!-- Watch dropdowns -->
+        <div id="watchSelections">
+          <label for="brandSelect">Brand:</label>
+          <select id="brandSelect">
+            <option value="">Select a Brand</option>
+          </select>
+          <label for="modelSelect">Model:</label>
+          <select id="modelSelect" disabled>
+            <option value="">(Select a brand first)</option>
+          </select>
+        </div>
+
+        <!-- Case dropdown -->
+        <div id="watchCaseSelections" class="hidden">
+          <label for="caseSelect">Select a Watchcase:</label>
+          <select id="caseSelect">
+            <option value="">Choose a watchcase</option>
+          </select>
+        </div>
+
+        <button class="addItemBtn" onclick="addSelectedItem()">Add Item</button>
+      </div>
+    </div>
+
+    <!-- BACKGROUND SELECTION OVERLAY -->
+    <div id="backgroundOverlay">
+      <div class="overlay-content">
+        <div class="closeBtn" onclick="closeBackgroundOverlay()">×</div>
+        <h2>Select a Background</h2>
+        <div class="bgOptions">
+          <label>
+            <input
+              type="radio"
+              name="bgChoice"
+              value="graphitebackground.png"
+              checked
+            />
+            Graphite
+          </label>
+          <label>
+            <input type="radio" name="bgChoice" value="woodbackground.jpg" />
+            Wood
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="bgChoice"
+              value="concretebackground.jpg"
+            />
+            Concrete
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="bgChoice"
+              value="vacationbackground.jpg"
+            />
+            Vacation
+          </label>
+          <!-- "Custom Color" radio option -->
+          <label>
+            <input type="radio" name="bgChoice" value="custom" />
+            Custom Color
+          </label>
+          <!-- Hidden color picker shown only if "Custom Color" is selected -->
+          <input type="color" id="bgColorPicker" value="#ffffff" />
+        </div>
+        <button onclick="applySelectedBackground()">Apply</button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div id="watchContainer"></div>
+
+    <!-- ZOOM / RESET / EXPORT / ETC. -->
+    <div id="zoombtns">
+      Size
+      <button id="zoomOutBtn">-</button>
+      <button id="zoomInBtn">+</button>
+      <button id="bgBtn">Change Background</button>
+      <button id="exportBtn">Download</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <!-- The big plus (+) -->
+    <div id="addWatchBtn" onclick="openAddItemOverlay()">+</div>
+
+    <script>
+      let scale = 1;
+
+      const watchData = {
+        Apple: [
+          { value: "appleblue", label: "Watch Gen 2 Blue" },
+          { value: "appleblack", label: "Watch Gen 2 Black" },
+        ],
+
+        Armogdan: [
+          { value: "ryanswhitechocolate", label: "Spirit of St. Louis" },
+        ],
+
+        "Audemars Piguet": [
+          { value: "aproyaloak", label: "Royal Oak Blue/Silver" },
+        ],
+
+        Breitling: [
+          { value: "superoceanblue", label: "Superocean Blue/Silver" },
+          { value: "breitlingnavitimer", label: "Navitimer" },
+          { value: "brietlingpremierblack", label: "Premier Black Dial" },
+        ],
+
+        Brew: [
+          { value: "brewmetriccarbon", label: "Metric Carbon" },
+          { value: "brewmetricretro", label: "Metric Retro" },
+        ],
+
+        Bulova: [{ value: "bulovaaccutron", label: "Accutron Spaceview" }],
+
+        BVLGARI: [
+          { value: "serpentiseduttori", label: "Serpenti Duttori" },
+          { value: "seduttoribezel", label: "Serpenti Duttori Diamond Bezel" },
+          { value: "serpentitubogas", label: "Serpenti Tubogas" },
+        ],
+
+        Cartier: [
+          { value: "cartiertankleather", label: "Tank Leather" },
+          { value: "cartiersantos", label: "Santos Stainless" },
+          { value: "cartiercrash", label: "Crash (Elton John)" },
+        ],
+
+        Casio: [
+          { value: "casiocalculator", label: "CA-500WE-1A Calculator" },
+          {
+            value: "casioakblack",
+            label: "G-Shock GA-2100-1A1 (Casioak Black)",
+          },
+          { value: "casioaq440", label: "AQ440" },
+          { value: "casioprotrek", label: "Pro Trek" },
+        ],
+
+        Google: [{ value: "pixelblack", label: "Pixel Watch Gen 2 Black" }],
+
+        Hamilton: [{ value: "hamiltonmurph38", label: "Khaki Field Murph 38" }],
+
+        IWC: [{ value: "iwcpilot", label: "Big Pilot Black" }],
+
+        "Jacob & Co.": [{ value: "billionaire", label: "The Billionaire" }],
+
+        "Jaeger-LeCoultre": [
+          { value: "reversoblack", label: "Reverso Black" },
+          { value: "reversogoldbrown", label: "Reverso Gold/Brown" },
+        ],
+
+        Longines: [
+          { value: "longineslegenddiver", label: "Legend Diver Black" },
+          { value: "longinesspirit", label: "Spirit Green Bezel" },
+        ],
+
+        "Michael Kors": [{ value: "mk8442", label: "Gage 8442 Black" }],
+
+        Michele: [{ value: "michelebrooke", label: "CSX-36" }],
+
+        "NFT / Bloch": [
+          { value: "blochsnftwatch", label: "NFT Guy 'MFER' Watch" },
+        ],
+
+        Omega: [
+          {
+            value: "speedmaster",
+            label: "Speedmaster Professional Black Dial",
+          },
+          {
+            value: "speedmasterwhite",
+            label: "Speedmaster Professional White Dial",
+          },
+          { value: "seamasterblack", label: "Seamaster Black Stainless" },
+          { value: "seamaster007", label: "Seamaster 007" },
+          { value: "speedmastersnoopy", label: "Speedmaster Snoopy" },
+        ],
+
+        Panerai: [
+          { value: "paneraisubblack", label: "Submersible Black" },
+          { value: "paneraisubblue", label: "Submersible Blue" },
+        ],
+
+        "Patek Philippe": [
+          { value: "patek5231J-001", label: "Complications 5231J-001" },
+          { value: "pateknautilus", label: "Nautilus Blue" },
+          {
+            value: "patekmoonphase",
+            label: "Complications 5396G-011 Moonphase",
+          },
+          { value: "blacknautilius", label: "Nautilus Black" },
+        ],
+
+        Rolex: [
+          { value: "aaronssub", label: "Submariner Blue/Gold" },
+          { value: "rolexnodatesub", label: "Submariner Black No Date" },
+          { value: "aaronsdatejust", label: "Datejust Silver" },
+          { value: "oysterperpetual31", label: "Oyster Perpetual 31" },
+          { value: "rolexgmtpepsi", label: "GMT-Master II Pepsi" },
+          { value: "rolexgmtbatman", label: "GMT-Master II Batman" },
+          { value: "gmtrootbeer", label: "GMT-Master II Rootbeer" },
+          { value: "rainbowdaytona", label: "Daytona Rainbow" },
+          { value: "lemansdaytona", label: "Le Mans Daytona" },
+          { value: "mayerdaytona", label: "Daytona Green/Gold “John Mayer”" },
+          { value: "daytona", label: "Daytona Panda" },
+        ],
+
+        Seiko: [
+          { value: "seikoturtle", label: "1968 Turtle" },
+          { value: "seikospb317", label: "Prospex SPB317" },
+          { value: "SPB143J1", label: "Prospex SPB143" },
+          { value: "seikoskx007", label: "SKX007" },
+        ],
+
+        Shinola: [{ value: "shinolarunwell47", label: "Runwell Chrono 47" }],
+
+        "TAG Heuer": [
+          { value: "tagheueraquaracer", label: "Aquaracer 200" },
+          { value: "tagheuermonaco", label: "Monaco" },
+          { value: "tagcarrera", label: "Grand Carrera Calibre 8" },
+        ],
+
+        Tudor: [{ value: "pjtudorbb58", label: "Black Bay 58" }],
+
+        "Ulysse Nardin": [{ value: "freakvision", label: "Freak Vision" }],
+      };
+
+      // Watchcase data
+      const watchCaseData = [
+        {
+          value: "4x2brownwatchcase",
+          label: "4x2 Brown Watchcase",
+          src: "watchcase.png",
+        },
+        {
+          value: "4watchstand",
+          label: "2x2 Wooden Stand",
+          src: "2x2woodwatchstand.png",
+        },
+        {
+          value: "twowatch",
+          label: "2x1 Wood Felt Stand",
+          src: "twowatch.png",
+        },
+        { value: "mansarm", label: "Man's Arm 1", src: "mansarm.png" },
+        { value: "mansarm2", label: "Man's Arm 2", src: "mansarm2.png" },
+        { value: "womanarm1", label: "Woman's Arm 1", src: "womanarm1.png" },
+      ];
+
+      // On DOM load, init
+      window.addEventListener("DOMContentLoaded", function () {
+        populateBrandSelect();
+        populateCaseSelect();
+        loadLayout();
+        setupMobileDragPrevention();
+
+        // Show/hide color picker if "Custom Color" is selected
+        const bgRadios = document.querySelectorAll('input[name="bgChoice"]');
+        const bgColorPicker = document.getElementById("bgColorPicker");
+        bgRadios.forEach((radio) => {
+          radio.addEventListener("change", function () {
+            if (this.value === "custom") {
+              bgColorPicker.style.display = "inline-block";
+            } else {
+              bgColorPicker.style.display = "none";
+            }
+          });
+        });
+      });
+
+      /* ============ ADD-ITEM OVERLAY ============ */
+      function openAddItemOverlay() {
+        document.getElementById("addItemOverlay").style.display = "flex";
+      }
+      function closeAddItemOverlay() {
+        document.getElementById("addItemOverlay").style.display = "none";
+      }
+      function updateSelectionUI() {
+        const watchDiv = document.getElementById("watchSelections");
+        const caseDiv = document.getElementById("watchCaseSelections");
+        const isWatch = document.getElementById("addTypeWatch").checked;
+        if (isWatch) {
+          watchDiv.classList.remove("hidden");
+          caseDiv.classList.add("hidden");
+        } else {
+          watchDiv.classList.add("hidden");
+          caseDiv.classList.remove("hidden");
+        }
+      }
+
+      // Populate brand dropdown
+      function populateBrandSelect() {
+        const brandSelect = document.getElementById("brandSelect");
+        brandSelect.innerHTML = `<option value="">Select a Brand</option>`;
+        Object.keys(watchData).forEach((brandName) => {
+          const opt = document.createElement("option");
+          opt.value = brandName;
+          opt.textContent = brandName;
+          brandSelect.appendChild(opt);
+        });
+      }
+      // Populate watchcase dropdown
+      function populateCaseSelect() {
+        const caseSelect = document.getElementById("caseSelect");
+        caseSelect.innerHTML = `<option value="">Choose a watchcase</option>`;
+        watchCaseData.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.value;
+          opt.textContent = c.label;
+          caseSelect.appendChild(opt);
+        });
+      }
+
+      // Brand changes => update models
+      document
+        .getElementById("brandSelect")
+        .addEventListener("change", function () {
+          const brand = this.value;
+          const modelSelect = document.getElementById("modelSelect");
+          modelSelect.innerHTML = "";
+          if (!brand) {
+            modelSelect.disabled = true;
+            modelSelect.innerHTML = `<option value="">(Select a brand first)</option>`;
+            return;
+          }
+          const models = watchData[brand];
+          models.forEach((obj) => {
+            const opt = document.createElement("option");
+            opt.value = obj.value;
+            opt.textContent = obj.label;
+            modelSelect.appendChild(opt);
+          });
+          modelSelect.insertAdjacentHTML(
+            "afterbegin",
+            `<option value="">Select a Model</option>`
+          );
+          modelSelect.disabled = false;
+          modelSelect.value = "";
+        });
+
+      function addSelectedItem() {
+        const isWatch = document.getElementById("addTypeWatch").checked;
+        if (isWatch) {
+          const brand = document.getElementById("brandSelect").value;
+          const model = document.getElementById("modelSelect").value;
+          if (!brand || !model) {
+            alert("Please select both a brand and a model!");
+            return;
+          }
+          // Create watch with model.png
+          createDraggableImage(model, model + ".png", 20, "50px", false);
+        } else {
+          // Watchcase
+          const selectedVal = document.getElementById("caseSelect").value;
+          if (!selectedVal) {
+            alert("Please select a watchcase!");
+            return;
+          }
+          const found = watchCaseData.find((c) => c.value === selectedVal);
+          if (found) {
+            createDraggableImage(found.value, found.src, 15, "50px", true);
+          }
+        }
+        autoSaveLayout();
+        closeAddItemOverlay();
+      }
+
+      /* ============ BACKGROUND OVERLAY ============ */
+      const bgBtn = document.getElementById("bgBtn");
+      bgBtn.addEventListener("click", function () {
+        openBackgroundOverlay();
+      });
+      function openBackgroundOverlay() {
+        document.getElementById("backgroundOverlay").style.display = "flex";
+      }
+      function closeBackgroundOverlay() {
+        document.getElementById("backgroundOverlay").style.display = "none";
+      }
+
+      function applySelectedBackground() {
+        const chosenRadio = document.querySelector(
+          'input[name="bgChoice"]:checked'
+        );
+        if (!chosenRadio) return;
+
+        const chosenValue = chosenRadio.value;
+        const colorPicker = document.getElementById("bgColorPicker");
+
+        if (chosenValue === "custom") {
+          // Custom color
+          document.body.style.backgroundImage = "none";
+          document.body.style.backgroundColor = colorPicker.value;
+        } else {
+          // Preset image
+          document.body.style.backgroundImage = `url("${chosenValue}")`;
+          document.body.style.backgroundColor = "";
+        }
+        autoSaveLayout();
+        closeBackgroundOverlay();
+      }
+
+      /* ============ INSTRUCTIONS OVERLAY ============ */
+      function showInstructionOverlay() {
+        document.getElementById("instructionOverlay").style.display = "flex";
+      }
+      function hideInstructionOverlay() {
+        document.getElementById("instructionOverlay").style.display = "none";
+      }
+      document
+        .getElementById("closeOverlayBtn")
+        .addEventListener("click", function () {
+          hideInstructionOverlay();
+          localStorage.setItem("hasSeenInstructions", "true");
+        });
+      document
+        .getElementById("instructionBtn")
+        .addEventListener("click", function () {
+          showInstructionOverlay();
+        });
+
+      /* ============ ABOUT OVERLAY ============ */
+      function showAboutOverlay() {
+        document.getElementById("aboutOverlay").style.display = "flex";
+      }
+      function hideAboutOverlay() {
+        document.getElementById("aboutOverlay").style.display = "none";
+      }
+      document
+        .getElementById("aboutBtn")
+        .addEventListener("click", function () {
+          showAboutOverlay();
+        });
+      document
+        .getElementById("closeAboutBtn")
+        .addEventListener("click", function () {
+          hideAboutOverlay();
+        });
+
+      /* ============ LOAD & RESTORE LAYOUT ============ */
+      function loadLayout() {
+        const savedData = localStorage.getItem("layout");
+        const hasSeenInstructions = localStorage.getItem("hasSeenInstructions");
+
+        if (savedData) {
+          const layout = JSON.parse(savedData);
+          restoreLayout(layout);
+        }
+        if (!hasSeenInstructions) {
+          showInstructionOverlay();
+        }
+      }
+      function restoreLayout(layout) {
+        if (layout.background && layout.background !== "none") {
+          document.body.style.backgroundImage = layout.background;
+          document.body.style.backgroundColor = "";
+        } else {
+          document.body.style.backgroundImage = "none";
+          document.body.style.backgroundColor = layout.backgroundColor || "";
+        }
+
+        scale = layout.scale || 1;
+        applyZoom();
+
+        // Clear container
+        document.getElementById("watchContainer").innerHTML = "";
+
+        // Recreate items
+        layout.items.forEach((itemData) => {
+          createDraggableImage(
+            itemData.id,
+            itemData.src,
+            itemData.zIndex,
+            itemData.top + "px",
+            itemData.isWatchCase
+          );
+          const newItem = document.getElementById(itemData.id);
+          newItem.style.left = itemData.left + "px";
+          newItem.style.width = itemData.width + "px";
+          newItem.style.height = itemData.height + "px";
+          newItem.locked = itemData.locked;
+          if (newItem.locked) {
+            const lockButton = newItem.querySelector(".lockButton");
+            if (lockButton) {
+              lockButton.innerText = "Unlock";
+            }
+          }
+        });
+      }
+      function autoSaveLayout() {
+        const layout = {
+          background: document.body.style.backgroundImage,
+          backgroundColor: document.body.style.backgroundColor,
+          scale: scale,
+          items: [],
+        };
+
+        const draggableItems = document.querySelectorAll(
+          "#watchContainer .draggable"
+        );
+        draggableItems.forEach((item) => {
+          const topValue = parseInt(item.style.top, 10) || 0;
+          const leftValue = parseInt(item.style.left, 10) || 0;
+          const widthValue = parseInt(item.style.width, 10) || 0;
+          const heightValue = parseInt(item.style.height, 10) || 0;
+
+          const bg = item.style.backgroundImage;
+          let pureSrc = "";
+          if (bg.startsWith('url("') && bg.endsWith('")')) {
+            pureSrc = bg.slice(5, -2);
+          }
+          layout.items.push({
+            id: item.id,
+            src: pureSrc,
+            top: topValue,
+            left: leftValue,
+            width: widthValue,
+            height: heightValue,
+            zIndex: parseInt(item.style.zIndex, 10) || 1,
+            locked: item.locked || false,
+            isWatchCase: item.isWatchCase || false,
+          });
+        });
+
+        localStorage.setItem("layout", JSON.stringify(layout));
+      }
+
+      /* ============ DRAGGABLE + LOCK ============ */
+      function makeDraggable(element) {
+        let pos1 = 0,
+          pos2 = 0,
+          pos3 = 0,
+          pos4 = 0;
+        let lastTapTime = 0,
+          isDragging = false;
+
+        element.addEventListener("mousedown", (e) => {
+          if (element.locked) return;
+          dragMouseDown(e);
+        });
+        element.addEventListener("touchstart", (e) => {
+          if (element.locked) {
+            const now = Date.now();
+            if (now - lastTapTime < 500 && !isDragging) {
+              e.preventDefault();
+            }
+            lastTapTime = now;
+            return;
+          }
+          touchStart(e);
+        });
+
+        function dragMouseDown(e) {
+          e.preventDefault();
+          isDragging = true;
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          document.onmouseup = closeDragElement;
+          document.onmousemove = elementDrag;
+          element.style.opacity = "0.5";
+        }
+        function touchStart(e) {
+          const now = Date.now();
+          const tapLen = now - lastTapTime;
+          const touch = e.touches[0];
+          if (tapLen < 500 && tapLen > 0) {
+            // double tap => remove
+            if (!element.locked) {
+              e.preventDefault();
+              element.remove();
+              autoSaveLayout();
+            }
+          } else {
+            lastTapTime = now;
+            pos3 = touch.clientX;
+            pos4 = touch.clientY;
+            document.ontouchend = closeDragElement;
+            document.ontouchmove = elementTouchDrag;
+            element.style.opacity = "0.5";
+            setTimeout(() => {
+              if (
+                Math.abs(pos3 - touch.clientX) < 10 &&
+                Math.abs(pos4 - touch.clientY) < 10
+              ) {
+                isDragging = true;
+              }
+            }, 200);
+          }
+        }
+        function elementDrag(e) {
+          if (!isDragging) return;
+          e.preventDefault();
+          pos1 = pos3 - e.clientX;
+          pos2 = pos4 - e.clientY;
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          element.style.top = element.offsetTop - pos2 + "px";
+          element.style.left = element.offsetLeft - pos1 + "px";
+        }
+        function elementTouchDrag(e) {
+          if (!isDragging) return;
+          e.preventDefault();
+          const touch = e.touches[0];
+          pos1 = pos3 - touch.clientX;
+          pos2 = pos4 - touch.clientY;
+          pos3 = touch.clientX;
+          pos4 = touch.clientY;
+          element.style.top = element.offsetTop - pos2 + "px";
+          element.style.left = element.offsetLeft - pos1 + "px";
+        }
+        function closeDragElement() {
+          isDragging = false;
+          document.onmouseup = null;
+          document.onmousemove = null;
+          document.ontouchend = null;
+          document.ontouchmove = null;
+          element.style.opacity = "1";
+          autoSaveLayout();
+        }
+      }
+
+      function createDraggableImage(id, src, zIndex, top, isCase) {
+        const existing = document.getElementById(id);
+        if (existing) existing.remove();
+
+        const div = document.createElement("div");
+        div.id = id;
+        div.className = "draggable";
+        div.style.backgroundImage = `url("${src}")`;
+        div.style.zIndex = zIndex;
+        div.style.top = top;
+        div.style.left = "50px";
+        div.locked = false;
+        div.isWatchCase = !!isCase;
+
+        // Sizing logic
+        if (id === "mansarm") {
+          div.style.width = "800px";
+          div.style.height = "276px";
+        } else if (id === "4x2brownwatchcase" || id === "twowatch") {
+          div.style.width = "600px";
+          div.style.height = "472px";
+        } else if (id === "4watchstand") {
+          div.style.width = "400px";
+          div.style.height = "600px";
+        } else if (id === "mansarm2" || id === "womanarm1") {
+          div.style.width = "800px";
+          div.style.height = "300px";
+        } else {
+          // Default watch size
+          div.style.width = "100px";
+          div.style.height = "175px";
+        }
+
+        document.getElementById("watchContainer").appendChild(div);
+        makeDraggable(div);
+
+        if (isCase) {
+          // Add lock button
+          const lockButton = document.createElement("button");
+          lockButton.className = "lockButton";
+          lockButton.innerText = "Lock";
+          lockButton.style.position = "absolute";
+          lockButton.style.left = "0";
+          lockButton.style.bottom = "0";
+          lockButton.style.zIndex = "100";
+          lockButton.onclick = function () {
+            div.locked = !div.locked;
+            lockButton.innerText = div.locked ? "Unlock" : "Lock";
+            autoSaveLayout();
+          };
+          lockButton.ontouchmove = function () {
+            div.locked = !div.locked;
+            lockButton.innerText = div.locked ? "Unlock" : "Lock";
+            autoSaveLayout();
+          };
+          div.appendChild(lockButton);
+        }
+
+        // Double-click remove if not locked
+        div.ondblclick = function () {
+          if (!div.locked) {
+            div.remove();
+            autoSaveLayout();
+          }
+        };
+      }
+
+      /* ============ MOBILE SCROLL PREVENT ============ */
+      function setupMobileDragPrevention() {
+        function isTouchingDraggableElement(e) {
+          return e.target.closest(".draggable") !== null;
+        }
+        document.addEventListener(
+          "touchstart",
+          (e) => {
+            e.target.dataset.touchingDraggable = isTouchingDraggableElement(e);
+          },
+          { passive: true }
+        );
+        document.addEventListener(
+          "touchmove",
+          (e) => {
+            if (e.target.dataset.touchingDraggable === "true") {
+              e.preventDefault();
+            }
+          },
+          { passive: false }
+        );
+        document.addEventListener(
+          "touchend",
+          (e) => {
+            delete e.target.dataset.touchingDraggable;
+          },
+          { passive: true }
+        );
+      }
+
+      /* ============ ZOOM ============ */
+      document
+        .getElementById("zoomInBtn")
+        .addEventListener("click", function () {
+          scale += 0.2;
+          applyZoom();
+          autoSaveLayout();
+        });
+      document
+        .getElementById("zoomOutBtn")
+        .addEventListener("click", function () {
+          scale = Math.max(1, scale - 0.2);
+          applyZoom();
+          autoSaveLayout();
+        });
+      function applyZoom() {
+        const container = document.getElementById("watchContainer");
+        container.style.transform = `scale(${scale})`;
+        container.style.transformOrigin = "center center";
+      }
+
+      /* ============ EXPORT ============ */
+      document
+        .getElementById("exportBtn")
+        .addEventListener("click", function () {
+          const originalBodyTransform = document.body.style.transform;
+          const originalBodyWidth = document.body.style.width;
+          const originalBodyHeight = document.body.style.height;
+
+          document.body.style.transform = "none";
+          document.body.style.width = "100%";
+          document.body.style.height = "100%";
+          const elementsToHide = [
+            document.getElementById("zoombtns"),
+            document.getElementById("addWatchBtn"),
+            document.getElementById("logoContainer"),
+          ];
+          const elementsToShow = [document.getElementById("watermarkImage")];
+          elementsToHide.forEach((el) => el && (el.style.display = "none"));
+          elementsToShow.forEach((el) => el && (el.style.display = "block"));
+
+          // Hide any lock buttons
+          const lockButtons = document.querySelectorAll(".lockButton");
+          lockButtons.forEach((btn) => (btn.style.display = "none"));
+
+          // Close overlays
+          closeAddItemOverlay();
+          closeBackgroundOverlay();
+          hideInstructionOverlay();
+          hideAboutOverlay();
+
+          // Wait for re-layout
+          window.scrollTo(0, 0);
+          setTimeout(() => {
+            html2canvas(document.body, { scale: 2, useCORS: true }).then(
+              (canvas) => {
+                let link = document.createElement("a");
+                link.download = "chrono-curator.png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                // Restore
+                elementsToHide.forEach((el) => {
+                  if (el) el.style.display = "";
+                });
+                lockButtons.forEach((btn) => (btn.style.display = ""));
+                elementsToShow.forEach((el) => (el.style.display = "none"));
+                document.body.style.transform = originalBodyTransform;
+                document.body.style.width = originalBodyWidth;
+                document.body.style.height = originalBodyHeight;
+              }
+            );
+          }, 300);
+        });
+
+      /* ============ RESET ============ */
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", function () {
+          localStorage.removeItem("layout");
+          // localStorage.removeItem("hasSeenInstructions");
+          document.getElementById("watchContainer").innerHTML = "";
+          document.body.style.backgroundImage = 'url("graphitebackground.png")';
+          document.body.style.backgroundColor = "";
+          scale = 1;
+          applyZoom();
+        });
+    </script>
+  </body>
+</html>
