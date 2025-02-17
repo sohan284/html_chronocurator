@@ -566,6 +566,75 @@
           z-index: 9999;
         }
       }
+      @media screen and (max-width: 768px) {
+        /* Make buttons bigger */
+        #zoomInBtn,
+        #zoomOutBtn,
+        #exportBtn,
+        #resetBtn,
+        #bgBtn {
+          padding: 20px;
+          font-size: x-large;
+          margin: 0 8px;
+        }
+
+        /* Increase size of the plus button */
+        #addWatchBtn {
+          width: 65px;
+          height: 65px;
+          font-size: 45px;
+          line-height: 65px;
+        }
+
+        /* Make modal content bigger */
+        #addItemOverlay .overlay-content,
+        #backgroundOverlay .overlay-content,
+        #instructionOverlay .overlay-content,
+        #aboutOverlay .overlay-content {
+          width: 75%;
+          max-width: 450px;
+          padding: 25px;
+        }
+
+        /* Increase text size in modals */
+        #addItemOverlay .overlay-content h2,
+        #backgroundOverlay .overlay-content h2,
+        #instructionOverlay .overlay-content h2,
+        #aboutOverlay .overlay-content h2 {
+          font-size: 24px;
+        }
+
+        #addItemOverlay .overlay-content label,
+        #backgroundOverlay .overlay-content label,
+        #addItemOverlay select,
+        #backgroundOverlay select,
+        #addItemOverlay .addItemBtn,
+        #backgroundOverlay button,
+        #closeOverlayBtn,
+        #closeAboutBtn {
+          font-size: 18px;
+          padding: 12px;
+        }
+
+        /* Make close buttons bigger */
+        .closeBtn {
+          font-size: 32px;
+          padding: 10px;
+        }
+
+        /* Make lock buttons bigger */
+        .lockButton {
+          padding: 8px 16px;
+          font-size: 18px;
+        }
+
+        /* Adjust instruction and about buttons */
+        #instructionBtn,
+        #aboutBtn {
+          padding: 12px;
+          font-size: medium;
+        }
+      }
     </style>
   </head>
 
