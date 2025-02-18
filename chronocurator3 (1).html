@@ -175,6 +175,8 @@
         font-size: 16px;
         opacity: 0.8;
         user-select: none;
+        margin-left: 25%;
+        margin-bottom: 0%;
       }
       .lockButton:hover {
         opacity: 1;
@@ -605,10 +607,11 @@
         #backgroundOverlay .overlay-content,
         #instructionOverlay .overlay-content,
         #aboutOverlay .overlay-content {
-          width: 75%;
+          width: 85%;
           max-width: 450px;
-          padding: 25px;
-          margin-top: -20%;
+          padding: 12px;
+          margin-top: -10%;
+          font-size: 12px;
         }
 
         /* Increase text size in modals */
@@ -616,7 +619,7 @@
         #backgroundOverlay .overlay-content h2,
         #instructionOverlay .overlay-content h2,
         #aboutOverlay .overlay-content h2 {
-          font-size: 24px;
+          font-size: 16px;
         }
 
         #addItemOverlay .overlay-content label,
@@ -627,8 +630,8 @@
         #backgroundOverlay button,
         #closeOverlayBtn,
         #closeAboutBtn {
-          font-size: 18px;
-          padding: 12px;
+          font-size: 14px;
+          padding: 10px;
         }
 
         /* Make close buttons bigger */
@@ -640,14 +643,18 @@
         /* Make lock buttons bigger */
         .lockButton {
           padding: 8px 16px;
-          font-size: 18px;
+          font-size: 12px;
+          margin-bottom: 10%;
+          margin-left: 0%;
         }
 
         /* Adjust instruction and about buttons */
         #instructionBtn,
         #aboutBtn {
+          transform: scale(0.75);
           padding: 12px;
           font-size: medium;
+          margin: 0px;
         }
       }
     </style>
