@@ -516,6 +516,7 @@
           align-items: center;
           background-size: cover;
           background-position: center;
+          overflow: hidden;
         }
         #instructionOverlay {
           position: fixed;
@@ -580,17 +581,40 @@
           text-align: center;
           z-index: 9999;
         }
+        #addItemOverlay select,
+        #backgroundOverlay select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid #ff5700;
+          border-radius: 8px;
+          background-color: #222;
+          color: #fff;
+          font-family: "Poppins", sans-serif;
+          font-size: 13px;
+          margin-bottom: 10px;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg width='14' height='10' viewBox='0 0 14 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23ffffff' d='M1 1l6 6 6-6'/%3E%3C/svg%3E");
+          background-position: right 0.75rem center;
+          background-repeat: no-repeat;
+          background-size: 14px 10px;
+        }
       }
       @media screen and (max-width: 768px) {
         /* Make buttons bigger */
-        #zoomInBtn,
-        #zoomOutBtn,
         #exportBtn,
         #resetBtn,
         #bgBtn {
-          padding: 12px;
-          font-size: medium;
-          margin: 5px;
+          padding: 10px;
+          font-size: clamp(12px, 2vw, 16px);
+          margin: 2px;
+        }
+
+        #zoomInBtn,
+        #zoomOutBtn,
+        #sizeText {
+          display: none;
         }
 
         /* Increase size of the plus button */
@@ -599,7 +623,7 @@
           height: 50px;
           font-size: 35px;
           line-height: 50px;
-          bottom: 140px;
+          bottom: 60px;
         }
 
         /* Make modal content bigger */
@@ -654,7 +678,15 @@
           transform: scale(0.75);
           padding: 12px;
           font-size: medium;
-          margin: 0px;
+          margin-inline: -9px;
+        }
+        #aboutBtn:active {
+          opacity: 1;
+          transform: scale(0.8);
+        }
+        #instructionBtn:active {
+          opacity: 1;
+          transform: scale(0.8);
         }
       }
     </style>
@@ -806,7 +838,7 @@
 
     <!-- ZOOM / RESET / EXPORT / ETC. -->
     <div id="zoombtns">
-      Size
+      <span id="sizeText">Size</span>
       <button id="zoomOutBtn">-</button>
       <button id="zoomInBtn">+</button>
       <button id="bgBtn">Change Background</button>
